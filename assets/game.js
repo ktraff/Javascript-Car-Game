@@ -25,6 +25,58 @@ carImage.onload = function () {
 };
 carImage.src = 'assets/images/player-car.svg';
 
+// Enemy Cars
+var npcCarsReady = 0;
+var numNpcCars = 3;
+var npcCarImageSources = ['npc-blue.svg', 'npc-green.svg', 'npc-yellow.svg'];
+var npcCars = [];
+// Determines when all npc car images are loaded.
+var npcCarLoaded = function () {
+    if (!isNaN(npcCarsReady) && npcCarsReady >= coinImageSources.length - 1) {
+        // All coins have been loaded.
+        npcCarsReady = true;
+    }
+    else { // Increment number of total npc cars loaded.
+        npcCarsReady++;
+    }
+};
+var npcCar = function (options) {
+    var that = {};
+
+    that.context = options.context || null;
+    that.x = options.x || 0;
+    that.y = options.y || 0;
+    that.width = options.width || 32;
+    that.height = options.height || 32;
+    that.image = options.image;
+
+    that.update = function () {
+        that.y += 1;
+        if (that.y > canvas.height) that.y = 0;
+    };
+
+    that.render = function () {
+        that.context.drawImage(that.image, that.x, that.y, that.width, that.height);
+    };
+
+    return that;
+};
+for (var i = 0; i < numNpcCars; i++) {
+    var npcImage = new Image();
+    npcImage.onload = npcCarLoaded;
+    var srcIdx = parseInt((Math.random() * 3), 10);
+    npcImage.src = 'assets/images/' + npcCarImageSources[srcIdx];
+    var car = npcCar({
+        context: ctx,
+        x: 32 + 50 + ((Math.random() * 150) + 1),
+        y: 0,
+        width: 32,
+        height: 32,
+        image: npcImage
+    });
+    npcCars.push(car);
+}
+
 // Coins
 var coinsReady = 0;
 var numCoins = 5;
@@ -140,6 +192,10 @@ addEventListener('keyup', function (e) {
 
 // Reset the game when the player catches a coin
 var reset = function () {
+    car.x = canvas.width / 2;
+    car.y = canvas.height / 2;
+
+    coinsCaught = 0;
 };
 
 // Update game objects
@@ -163,6 +219,10 @@ var update = function (modifier) {
         coins[key].update();
     }
 
+    for (key in npcCars) {
+        npcCars[key].update();
+    }
+
     for (key in coins) {
         var coin = coins[key];
         // Are they touching?
@@ -181,14 +241,16 @@ var update = function (modifier) {
             coin.image.src = 'assets/images/' + coinImageSources[srcIdx];
             coin.x = 32 + 50 + ((Math.random() * 300) + 1);
             coin.y = 32 + (Math.random() * (canvas.height - 64));
-
-            reset();
         }
     }
+
+    // TODO car collision call reset()
 };
 
 // Draw everything
 var render = function () {
+    var key;
+
     if (bgReady) {
         ctx.drawImage(bgImage, 0, 0);
     }
@@ -198,8 +260,14 @@ var render = function () {
     }
 
     if (coinsReady) {
-        for (var key in coins) {
+        for (key in coins) {
             coins[key].render();
+        }
+    }
+
+    if (npcCarsReady) {
+        for (key in npcCars) {
+            npcCars[key].render();
         }
     }
 
