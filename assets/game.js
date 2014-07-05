@@ -1,4 +1,10 @@
-// Create the canvas
+//     game.js 0.0.1
+//     http://opuskyrios.com
+//     (c) 2014 Kyle Traff
+//     Code may be freely distributed under the MIT license.
+
+
+// Create the canvas.
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
 // Used for coin animation.
@@ -9,7 +15,7 @@ canvas.width = 512;
 canvas.height = 480;
 document.body.appendChild(canvas);
 
-// Background image
+// Background image.
 var bgReady = false;
 var bgImage = new Image();
 bgImage.onload = function () {
@@ -17,7 +23,7 @@ bgImage.onload = function () {
 };
 bgImage.src = 'assets/images/background.png';
 
-// Car image
+// Car image.
 var carReady = false;
 var carImage = new Image();
 carImage.onload = function () {
@@ -25,9 +31,9 @@ carImage.onload = function () {
 };
 carImage.src = 'assets/images/player-car.svg';
 
-// Enemy Cars
+// Enemy Cars.
 var npcCarsReady = 0;
-var numNpcCars = 3;
+var numNpcCars = 15;
 var npcCarImageSources = ['npc-blue.svg', 'npc-green.svg', 'npc-yellow.svg'];
 var npcCars = [];
 // Determines when all npc car images are loaded.
@@ -46,13 +52,20 @@ var npcCar = function (options) {
     that.context = options.context || null;
     that.x = options.x || 0;
     that.y = options.y || 0;
+    that.speed = options.speed || 1;
     that.width = options.width || 32;
     that.height = options.height || 32;
     that.image = options.image;
 
     that.update = function () {
-        that.y += 1;
-        if (that.y > canvas.height) that.y = 0;
+        that.y += that.speed;
+        if (that.y > canvas.height) {
+            // Move the car to the top, give it a new color
+            var srcIdx = parseInt((Math.random() * 3), 10);
+            that.image.src = 'assets/images/' + npcCarImageSources[srcIdx];
+            that.x = 32 + 50 + ((Math.random() * 300) + 1);
+            that.y = 0;
+        }
     };
 
     that.render = function () {
@@ -68,10 +81,11 @@ for (var i = 0; i < numNpcCars; i++) {
     npcImage.src = 'assets/images/' + npcCarImageSources[srcIdx];
     var car = npcCar({
         context: ctx,
-        x: 32 + 50 + ((Math.random() * 150) + 1),
-        y: 0,
+        x: 32 + 50 + ((Math.random() * 300) + 1),
+        y: 0 - (Math.random() * 10000 +1),
         width: 32,
         height: 32,
+        speed: Math.random * 500 +1,
         image: npcImage
     });
     npcCars.push(car);
@@ -100,7 +114,7 @@ var getRoadY = function () {
     return 32 + (Math.random() * (canvas.height - 64));
 };
 // Renders a rotating coin.
-function sprite (options) {
+function rotatingCoin (options) {
     
     var that = {},
         frameIndex = 0,
@@ -116,11 +130,9 @@ function sprite (options) {
     that.image = options.image;
     
     that.update = function () {
-
         tickCount += 1;
 
         if (tickCount > ticksPerFrame) {
-
             tickCount = 0;
             
             // If the current frame index is in range
@@ -134,10 +146,6 @@ function sprite (options) {
     };
     
     that.render = function () {
-    
-      // Clear the canvas
-      //that.context.clearRect(0, 0, that.width, that.height);
-      
       // Draw the animation
       that.context.drawImage(
         that.image,
@@ -158,7 +166,7 @@ for (var i = 0; i < numCoins; i++) {
     coinImage.onload = coinLoaded;
     var srcIdx = parseInt((Math.random() * 3), 10);
     coinImage.src = 'assets/images/' + coinImageSources[srcIdx];
-    var coin = sprite({
+    var coin = rotatingCoin({
         context: ctx,
         x: 32 + 50 + ((Math.random() * 150) + 1),
         y: 32 + (Math.random() * (canvas.height - 64)),
@@ -244,7 +252,19 @@ var update = function (modifier) {
         }
     }
 
-    // TODO car collision call reset()
+    // Car collisions.
+    for (key in npcCars) {
+        var npcCar = npcCars[key];
+        // Are they touching?
+        if (
+            car.x <= (npcCar.x + 24) &&
+            npcCar.x <= (car.x + 24) &&
+            car.y <= (npcCar.y + 24) &&
+            npcCar.y <= (car.y + 24)
+        ) {
+            reset();
+        }
+    }
 };
 
 // Draw everything
